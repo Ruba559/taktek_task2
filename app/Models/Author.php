@@ -11,6 +11,6 @@ class Author extends Model
     
     public function platforms()
     {
-        return $this->hasMany(Platform::class, );
+        return $this->hasMany(Platform::class, 'author_id');
     }
 }

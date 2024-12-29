@@ -41,9 +41,11 @@
                         <a wire:click="destroy({{ $item->id }})"><span class="fa fa-remove "></span></a>
                     </td>
                 </tr>
+              
+
             @endforeach
 
-
+           
         </tbody>
     </table>
 
@@ -57,46 +59,45 @@
                     <h5 class="modal-title"> {{ $author ? 'تعديل الكاتب' : 'إضافة كاتب' }}</h5>
 
                 </div>
-
+               
                 <form wire:submit.prevent="save">
 
                     <div class="row">
                         <label for="formFileMultiple"
                             class="btn btn-primary btn-sm form-label  mx-5 mt-3 p-2 w-100 radius-10 text-center"><span
                                 class="fa fa-image mx-2"></span> اختر الصورة</label>
-                        <input class="form-control" type="file" wire:model="state.image" id="formFileMultiple" hidden
-                            wire:loading.attr="disabled" wire:target='state.image' />
+                        <input class="form-control" type="file" wire:model="stateData.image" id="formFileMultiple" hidden
+                            wire:loading.attr="disabled" wire:target='stateData.image' />
 
-                        <div wire:loading wire:target="state.image">تحميل</div>
+                        <div wire:loading wire:target="stateData.image">تحميل</div>
                         <div class="progress">
                             <div class="progress-bar" style="width:0%">0%</div>
                         </div>
                         <div class="cart-img-container">
-                            @if (isset($state['image']) && $state['image'] != null)
-                                <div class="deleter" wire:click="deleteImage()">
-                                    <span class="fa fa-trash "></span>
-                                </div>
+                            @if ($image2)
+                            <div class="deleter" wire:click="deleteImage()">
+                                <span class="fa fa-trash "></span>
+                            </div>
+                            <div class="col-12 mb-1">
+                                <img class="img-fluid " src="{{ asset('storage/' . $image2) }}">
+                            </div>
+                            @elseif (isset($stateData['image']) && $stateData['image'] != null )
+                            <div class="deleter" wire:click="deleteImage()">
+                                <span class="fa fa-trash "></span>
+                            </div>
 
-                                <div class="col-12 mb-1">
-                                    <img class="img-fluid " src="{{ $state['image']->temporaryUrl() }}">
-                                </div>
-                            @else
-                                @if ($image2)
-                                    <div class="deleter" wire:click="deleteImage()">
-                                        <span class="fa fa-trash "></span>
-                                    </div>
-                                    <div class="col-12 mb-1">
-                                        <img class="img-fluid " src="{{ asset('storage/' . $image2) }}">
-                                    </div>
-                                @endif
+                            <div class="col-12 mb-1">
+                                <img class="img-fluid " src="{{ $stateData['image']->temporaryUrl() }}">
+                            </div>
 
                             @endif
                         </div>
 
                     </div>
+                   
                     <div class="form-group">
                         <label for="name">الاسم</label>
-                        <input type="text" wire:model="state.name" name="" class="form-control" id="name">
+                        <input type="text" wire:model="stateData.name" class="form-control" id="name">
 
                     </div>
                     @error('name')
@@ -105,7 +106,7 @@
 
                     <div class="form-group">
                         <label for="work">العمل</label>
-                        <input type="text" wire:model="state.work" class="form-control" id="work">
+                        <input type="text" wire:model="stateData.work" class="form-control" id="work">
 
                     </div>
                     @error('work')
@@ -113,7 +114,7 @@
                     @enderror
                     <div class="form-group">
                         <label for="summary">نبذة عن الكاتب</label>
-                        <textarea type="text" wire:model="state.summary" class="form-control" id="summary"></textarea>
+                        <textarea type="text" wire:model="stateData.summary" class="form-control" id="summary"></textarea>
 
                     </div>
                     @error('summary')
@@ -127,22 +128,21 @@
                             <div class="col-md-5">
                                 <label for="name"> ({{ $index + 1 }} ) اسم المنصة </label>
                                 <input type="text" class="form-control" wire:model="rows.{{ $index }}.name">
-                                @error('rows.' . $index . '.name')
+                                @error($index . '.name')
                                     <span class="error text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="col-md-5">
                                 <label for="url"> ({{ $index + 1 }} ) رابط المنصة </label>
                                 <input type="text" class="form-control" wire:model="rows.{{ $index }}.url">
-                                @error('rows.' . $index . '.url')
+                                @error($index . '.url')
                                     <span class="error text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="col-md-5">
                                 <label for="image"> ({{ $index + 1 }} ) ايقونة المنصة </label>
-                                <input type="text" class="form-control"
-                                    wire:model="rows.{{ $index }}.image">
-                                @error('rows.' . $index . '.image')
+                                <input type="text" class="form-control" wire:model="rows.{{ $index }}.image">
+                                @error($index . '.image')
                                     <span class="error text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -154,9 +154,8 @@
                     @endforeach
 
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled"
-                            wire:target='save'> <span class="spinner spinner-grow " wire:loading
-                                wire:target='save'></span> حفظ</button>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target='save'>
+                            <span class="spinner spinner-grow " wire:loading wire:target='save'></span> حفظ</button>
                         <button type="button" class="btn btn-secondary" wire:click="closeModal()">إغلاق</button>
                     </div>
                 </form>

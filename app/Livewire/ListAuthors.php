@@ -16,7 +16,7 @@ class ListAuthors extends Component
 
     public $authors , $author;
 
-    public  $state =[];
+    public  $stateData =[];
     
     public $search_text ,$type_order , $order;
     protected $listeners = ['closeModal' => 'closeModal'];
@@ -24,7 +24,7 @@ class ListAuthors extends Component
 
    
   
-    public $image2  ;
+    public $image2 ;
 
 
     public $rows = []; 
@@ -51,9 +51,9 @@ class ListAuthors extends Component
  
     public function save()
     {
+     
 
-
-        $validatedData = Validator::make($this->state, [
+        $validatedData = Validator::make($this->stateData, [
             'name' => 'required|string|max:255',
             'image' => 'nullable',
             'work' => 'required',
@@ -61,11 +61,15 @@ class ListAuthors extends Component
         ])->validate();
 
       
-        $this->validate([
-            'rows.*.name' => 'required',
-            'rows.*.url' => 'required',
-            'rows.*.image' => 'nullable',
-        ]);
+        $validatedPlatform = Validator::make($this->rows, [
+            '*.name' => 'required',
+            '*.url' => 'required',
+            '*.image' => 'nullable',
+        ], [
+            '*.name.required' => 'the name is required',
+        ])->validate();
+
+      
     
         DB::beginTransaction();
 
@@ -74,69 +78,47 @@ class ListAuthors extends Component
    
         if(!$this->author)
         {
+            if(isset($validatedData['image']))
+            {
+                $validatedData['image'] = $validatedData['image']->store('authors', 'public');
+            }
             $author = Author::create($validatedData);
-            $author->update([ 'image' => $this->storeImage()]);
+          
       
         if($this->rows)
-        {
-         
-            foreach($this->rows as $item)
-            {
-            
-                $author->platforms()->createMany([
-                    [
-                        'name' =>  $item['name'],
-                        'url' =>  $item['url'],
-                        'image' =>  $item['image'],
-                    ]
-                ]);
-                
-            }
+        { 
+                $author->platforms()->createMany(
+                    $this->rows
+                );
         }
    
     }else{
+      
+        if(isset($validatedData['image']) && $validatedData['image'] != $this->author->image)
+        {
+            $validatedData['image'] = $validatedData['image']->store('authors', 'public');
+        }
+
+  
         $this->author->update(
             $validatedData
         );
-
-        if ($this->image) {
-            if ($this->author->image) {
-               
-                 
-                 unlink(public_path() . '/storage/' . $this->author->image);
-               
-                $this->author->update(['image' => $this->storeImage()]);
-            } else {
-
-                $this->author->update(['image' => $this->storeImage()]);
-            }
-        }
-
         
-        $platforms = Platform::where('author_id', $this->author->id)->get();
+      
+       
 
-        foreach ($platforms as $platform) {
-            $platform->delete();
-        }
-        if($this->rows)
+        if(!empty($this->rows))
         {
-            $this->validate([
-                'rows.*.name' => 'required',
-                'rows.*.url' => 'required',
-            ]);
-    
-            foreach($this->rows as $item)
-            {
-    
-                Platform::create([
-                    'name' =>  $item['name'],
-                    'url' =>  $item['url'],
-                    'author_id' => $this->author->id,
-                    'image' =>  $item['image'],
-                ]);
-    
-                
-            }
+           if($this->author->platforms->count() > 0 )
+           {
+             $this->author->platforms->each->delete();
+           }
+           
+
+                    $this->author->platforms()->createMany(
+                        $this->rows
+                    );
+            
         }
    
     }
@@ -155,14 +137,11 @@ class ListAuthors extends Component
     public function edit($id)
     {
 
-        $this->author = Author::where('id' , $id)->first();
-    
-      //  $this->fill(['state.name' => $this->author->name , 'state.work' => $this->author->work , 'state.summary' => $this->author->summary]);
-        //$this->fill(['state' =>  $this->author->toArray()]);
-    
+        $this->author = Author::find( $id);
+      
 
-      $this->state = $this->author->toArray();
-
+      $this->stateData = $this->author->toArray();
+    
         $this->image2 =  $this->author->image;   
 
 
@@ -186,30 +165,20 @@ class ListAuthors extends Component
     {
       
         $this->rows = [];
-        $this->state = [];
+      $this->stateData = [];
 
         $this->author = null;
       
         $this->dispatch('close-modal');
         
     }
-    public function storeImage()
-    {
-       if (isset($this->state['image'])) {
-        $name = $this->state['image']->store('authors', 'public');
-
-        return $name;
-           
-       }
-       return Null;
-    }
-
+ 
    
 public function deleteImage()
 {
   
-    if (isset($this->state['image'])) {
-        $this->state['image'] ='';
+    if (isset($this->stateData['image'])) {
+        $this->stateData['image'] ='';
     }
     $this->image2 = '';
   
@@ -221,14 +190,14 @@ public function deleteImage()
     public function destroy($id)
     { 
         
-        Author::find($id)->delete();
+        $author = Author::find($id);
  
 
-        $platforms = Platform::where('author_id', $id)->get();
-
-        foreach ($platforms as $platform) {
-            $platform->delete();
+        if($author->platforms->count() > 0 )
+        {
+          $author->platforms->each->delete();
         }
+        $author->delete();
  
    }
 
